@@ -1,0 +1,9 @@
+{
+  "id": "open-in-explorer",
+  "name": "Open in Explorer",
+  "description": "Right-click a file path in agent chat to reveal it in Windows Explorer",
+  "media": [],
+  "requirements": {
+    "paseo": ">=0.17.3"
+  }
+}
