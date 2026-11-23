@@ -6,8 +6,10 @@
 
 ## 功能
 
-- 右键 agent 回复里的路径，弹出“在资源管理器中打开”菜单
-- 文件：打开所在文件夹并选中该文件；文件夹：直接打开
+- 右键 agent 回复里的路径，弹出菜单：
+  - **在资源管理器中打开**：文件会被选中，文件夹直接打开
+  - **复制完整路径**：复制解析后的绝对路径（桌面端）
+- 只写了文件名或部分路径时（如 `package.json`），会在工作目录下逐层查找匹配的文件（最多 5 层，跳过 `node_modules`、`.git`、`dist` 等）
 - 路径不存在时，打开最近的存在的上级文件夹
 - 资源管理器窗口会被切到前台，不会只在任务栏闪烁
 - 右键非路径文字时，保留原来的右键菜单
@@ -20,6 +22,7 @@
 | 盘符绝对路径 | `C:\Users\me\file.txt`、`D:/xm/project` |
 | 网络路径 (UNC) | `\\nas\share\doc.pdf` |
 | 相对路径（按 agent 工作目录解析） | `./docs`、`src/app/main.ts` |
+| 反引号里的文件名 | `` `package.json` ``、`` `.gitignore` `` |
 | 带行列号 | `src/index.ts:12:3`（行列号会被忽略） |
 
 ## 安装
@@ -42,7 +45,7 @@ paseo plugin remove open-in-explorer
 Paseo 没有提供聊天右键菜单的扩展 API，所以插件：
 
 1. 用时间线转换器（timeline transformer）接管**已完成**且包含路径的 assistant 消息，并用 Paseo 自带的 Markdown 组件重新渲染，外观不变。正在流式输出的消息和不含路径的消息不受影响。
-2. 在桌面端监听该消息的 `contextmenu` 事件：选中的文字或光标下的文字中有路径时，显示插件菜单。
+2. 在桌面端以捕获阶段监听该消息的 `contextmenu` 事件（先于 Paseo 自身的链接右键处理）：光标下的文字或选中的文字中有路径时，显示插件菜单。
 3. 点击菜单项后，通过插件 RPC 让 daemon 执行 `explorer.exe /select,"<路径>"`。
 4. daemon 是后台进程，受 Windows 前台锁限制，新窗口默认无法置顶。插件随后运行一段隐藏的 PowerShell，找到对应的资源管理器窗口并切到前台。
 
@@ -70,14 +73,15 @@ paseo plugin logs open-in-explorer
 | 文件 | 作用 |
 | --- | --- |
 | `shared/paths.ts` | 路径识别与 RPC 契约 |
-| `client/message.tsx` | 消息渲染与右键菜单 |
+| `client/message.tsx` | 消息渲染与右键检测 |
+| `client/menu.tsx` | 右键菜单 |
 | `client/web.ts` | 桌面端 DOM 事件辅助 |
-| `server/open.ts` | 解析路径并启动资源管理器 |
+| `server/open.ts` | 解析、查找路径并启动资源管理器 |
 | `server/focus.ts` | 将资源管理器窗口切到前台 |
 
 ## English
 
-A Paseo plugin: right-click a file path in an agent's reply to reveal it in Windows Explorer. Files open with the file selected, folders open directly, and missing paths fall back to the nearest existing parent. The Explorer window is brought to the foreground. Requires Paseo 0.17.3+ with plugins enabled.
+A Paseo plugin: right-click a file path in an agent's reply to reveal it in Windows Explorer. Files open with the file selected, folders open directly, bare file names like `package.json` are searched for below the agent's working directory, and missing paths fall back to the nearest existing parent. The menu can also copy the full path. The Explorer window is brought to the foreground. Requires Paseo 0.17.3+ with plugins enabled.
 
 ```bash
 paseo plugin install github:cnklpz/paseo-open-in-explorer
